@@ -25,8 +25,8 @@ contract Grid is ReentrancyGuard {
 
     uint256 public constant AMOUNT = 1e18;
     uint256 public constant DURATION = 7 days;
-    uint256 public constant X_MAX = 128;
-    uint256 public constant Y_MAX = 128;
+    uint256 public constant X_MAX = 50;
+    uint256 public constant Y_MAX = 50;
     uint256 public constant COLOR_MAX = 4;
 
     /*----------  STATE VARIABLES  --------------------------------------*/
@@ -51,7 +51,7 @@ contract Grid is ReentrancyGuard {
 
     /*----------  EVENTS ------------------------------------------------*/
 
-    event Grid__Placed(address indexed account, address indexed prevAccount, uint256 x, uint256 y, uint256 color);
+    event Grid__Placed(address indexed placer,address indexed account, address indexed prevAccount, uint256 x, uint256 y, uint256 color);
 
     /*----------  MODIFIERS  --------------------------------------------*/
 
@@ -63,7 +63,7 @@ contract Grid is ReentrancyGuard {
         IGridRewarder(gridRewarder).addReward(_OTOKEN);
     }
 
-    function place(uint256[] memory x, uint256[] memory y, uint256 color) 
+    function placeFor(address account, uint256[] memory x, uint256[] memory y, uint256 color) 
         external 
         nonReentrant 
     {
@@ -71,7 +71,6 @@ contract Grid is ReentrancyGuard {
         uint256 length = x.length;
         if (length == 0) revert Grid__InvalidZeroInput();
         if (length != y.length) revert Grid__NonMatchingLengths();
-        address account = msg.sender;
         for (uint256 i = 0; i < length; i++) {
             if (x[i] > X_MAX || y[i] > Y_MAX) revert Grid__InvalidCoordinates();
             address prevAccount = grid[x[i]][y[i]].account;
@@ -80,14 +79,30 @@ contract Grid is ReentrancyGuard {
             if (prevAccount != address(0)) {
                 IGridRewarder(gridRewarder)._withdraw(AMOUNT, prevAccount);
             }
-            emit Grid__Placed(account, prevAccount, x[i], y[i], color);
+            emit Grid__Placed(msg.sender, account, prevAccount, x[i], y[i], color);
         }
         placed[account] += (length * AMOUNT);
-        IOTOKEN(OTOKEN).burnFrom(account, length * AMOUNT);
+        IOTOKEN(OTOKEN).burnFrom(msg.sender, length * AMOUNT);
         IGridRewarder(gridRewarder)._deposit(length * AMOUNT, account);
     }
 
     /*----------  VIEW FUNCTIONS  ---------------------------------------*/
+
+    function getRow(uint256 y) external view returns (Tile[X_MAX] memory) {
+        Tile[X_MAX] memory row;
+        for (uint256 i = 0; i < X_MAX; i++) {
+            row[i] = grid[i][y];
+        }
+        return row;
+    }
+
+    function getCol(uint256 x) external view returns (Tile[Y_MAX] memory) {
+        Tile[Y_MAX] memory column;
+        for (uint256 i = 0; i < Y_MAX; i++) {
+            column[i] = grid[x][i];
+        }
+        return column;
+    }
 
     function getGrid() external view returns (Tile[X_MAX][Y_MAX] memory) {
         return grid;

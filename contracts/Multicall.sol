@@ -35,7 +35,9 @@ interface IGrid {
         address account;
     }
     function placed(address account) external view returns (uint256);
-    function getGrid() external view returns (Tile[128][128] memory);
+    function getGrid() external view returns (Tile[50][50] memory);
+    function getRow(uint256 y) external view returns (Tile[50] memory);
+    function getCol(uint256 x) external view returns (Tile[50] memory);
     function getTile(uint256 x, uint256 y) external view returns (Tile memory);
     function readXAxis(uint256 xCursor, uint256 yCursor, uint256 length) external view returns (Tile[] memory tiles);
     function readYAxis(uint256 xCursor, uint256 yCursor, uint256 length) external view returns (Tile[] memory tiles);
@@ -65,8 +67,8 @@ contract Multicall {
     uint256 public constant DIVISOR = 10000;
     uint256 public constant PRECISION = 1e18;
     address public constant ORACLE = 0x0715A7794a1dc8e42615F059dD6e406A6594651A;
-    uint256 public constant X_MAX = 128;
-    uint256 public constant Y_MAX = 128;
+    uint256 public constant X_MAX = 50;
+    uint256 public constant Y_MAX = 50;
 
     /*----------  STATE VARIABLES  --------------------------------------*/
 
@@ -218,8 +220,15 @@ contract Multicall {
         return portfolio;
     }
 
-    // will not work for a 128x128 grid
-    function getGrid() external view returns (IGrid.Tile[X_MAX][Y_MAX] memory gridData) {
+    function getRow(uint256 y) external view returns (IGrid.Tile[X_MAX] memory row) {
+        return IGrid(grid).getRow(y);
+    }
+
+    function getCol(uint256 x) external view returns (IGrid.Tile[Y_MAX] memory col) {
+        return IGrid(grid).getCol(x);
+    }
+
+    function getGrid() external view returns (IGrid.Tile[X_MAX][Y_MAX] memory) {
         return IGrid(grid).getGrid();
     }
 

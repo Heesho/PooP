@@ -141,13 +141,39 @@ describe("test0", function () {
     it("Grid", async function () {
         console.log("******************************************************");
         let res = await grid.getGrid();
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 50; i++) {
             let row = '';
-            for (let j = 0; j < 10; j++) {
+            for (let j = 0; j < 50; j++) {
                 let tile = res[i][j];
                 let number;
                 if (tile.account == AddressZero) {
-                    number = 0;
+                    number = '.';
+                } else if (tile.account == user1.address) {
+                    number = 1;
+                } else if (tile.account == user2.address) {
+                    number = 2;
+                } else if (tile.account == user3.address) {
+                    number = 3;
+                } else {
+                    number = '?';
+                }
+                row += number + ' ';
+            }
+            console.log(row);
+        }
+    });
+
+    it("Grid", async function () {
+        console.log("******************************************************");
+        let res;
+        for (let i = 0; i < 50; i++) {
+            let row = '';
+            res = await multicall.getRow(i);
+            for (let j = 0; j < 50; j++) {
+                let tile = res[j];
+                let number;
+                if (tile.account == AddressZero) {
+                    number = '.';
                 } else if (tile.account == user1.address) {
                     number = 1;
                 } else if (tile.account == user2.address) {
@@ -166,19 +192,19 @@ describe("test0", function () {
     it("User1 places a tile on [0,0]", async function () {
         console.log("******************************************************");
         await OTOKEN.connect(user1).approve(grid.address, one);
-        await grid.connect(user1).place([0], [0], 0);
+        await grid.connect(user1).placeFor(user1.address, [0], [0], 0);
     });
 
     it("Grid", async function () {
         console.log("******************************************************");
         let res = await grid.getGrid();
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 50; i++) {
             let row = '';
-            for (let j = 0; j < 10; j++) {
+            for (let j = 0; j < 50; j++) {
                 let tile = res[i][j];
                 let number;
                 if (tile.account == AddressZero) {
-                    number = 0;
+                    number = '.';
                 } else if (tile.account == user1.address) {
                     number = 1;
                 } else if (tile.account == user2.address) {
@@ -228,19 +254,19 @@ describe("test0", function () {
     it("User1 places a tile on [9,9]", async function () {
         console.log("******************************************************");
         await OTOKEN.connect(user1).approve(grid.address, one);
-        await grid.connect(user1).place([9], [9], 0);
+        await grid.connect(user1).placeFor(user1.address, [9], [9], 0);
     });
 
     it("Grid", async function () {
         console.log("******************************************************");
-        let res = await multicall.getGrid();
-        for (let i = 0; i < 128; i++) {
+        let res = await grid.getGrid();
+        for (let i = 0; i < 50; i++) {
             let row = '';
-            for (let j = 0; j < 128; j++) {
+            for (let j = 0; j < 50; j++) {
                 let tile = res[i][j];
                 let number;
                 if (tile.account == AddressZero) {
-                    number = 0;
+                    number = '.';
                 } else if (tile.account == user1.address) {
                     number = 1;
                 } else if (tile.account == user2.address) {
@@ -256,6 +282,93 @@ describe("test0", function () {
         }
     });
 
+    it("User1 places a tile on many tiles", async function () {
+        console.log("******************************************************");
+        await OTOKEN.connect(user1).approve(grid.address, five);
+        await grid.connect(user1).placeFor(user1.address, [0, 1, 1, 10, 40], [0, 4, 12, 26, 49], 0);
+    });
+
+    it("User2 places a tile on many tiles", async function () {
+        console.log("******************************************************");
+        await OTOKEN.connect(user2).approve(grid.address, five);
+        await grid.connect(user2).placeFor(user2.address, [34, 11, 1, 10, 39], [39, 4, 2, 6, 33], 0);
+    });
+
+    it("Grid", async function () {
+        console.log("******************************************************");
+        let res = await grid.getGrid();
+        for (let i = 0; i < 50; i++) {
+            let row = '';
+            for (let j = 0; j < 50; j++) {
+                let tile = res[i][j];
+                let number;
+                if (tile.account == AddressZero) {
+                    number = '.';
+                } else if (tile.account == user1.address) {
+                    number = 1;
+                } else if (tile.account == user2.address) {
+                    number = 2;
+                } else if (tile.account == user3.address) {
+                    number = 3;
+                } else {
+                    number = '?';
+                }
+                row += number + ' ';
+            }
+            console.log(row);
+        }
+    });
+
+    it("User3 places a tile on many tiles", async function () {
+        console.log("******************************************************");
+        await OTOKEN.connect(user3).approve(grid.address, ten);
+        await grid.connect(user3).placeFor(user3.address, [0, 1, 1, 10, 40, 39, 38, 37, 36, 35], [0, 4, 12, 26, 2, 39, 38, 37, 36, 35], 0);
+    });
+
+    it("User1 places a tile on many tiles", async function () {
+        console.log("******************************************************");
+        await OTOKEN.connect(user1).approve(grid.address, twenty);
+        await grid.connect(user1).placeFor(user1.address, [0, 1, 1, 10, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30], [0, 4, 12, 26, 2, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30], 0);
+    });
+
+    it("User2 places a tile on many tiles", async function () {
+        console.log("******************************************************");
+        await OTOKEN.connect(user2).approve(grid.address, twenty);
+        await grid.connect(user2).placeFor(user2.address, [22, 11, 1, 10, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29], [39, 4, 2, 6, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23], 0);
+    });
+
+    it("User3 places a tile on many tiles", async function () {
+        console.log("******************************************************");
+        await OTOKEN.connect(user3).approve(grid.address, twenty);
+        await grid.connect(user3).placeFor(user3.address, [0, 1, 1, 10, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30], [0, 4, 12, 26, 2, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30], 0);
+    });
+
+    it("Grid", async function () {
+        console.log("******************************************************");
+        let res = await grid.getGrid();
+        for (let i = 0; i < 50; i++) {
+            let row = '';
+            for (let j = 0; j < 50; j++) {
+                let tile = res[i][j];
+                let number;
+                if (tile.account == AddressZero) {
+                    number = '.';
+                } else if (tile.account == user1.address) {
+                    number = 1;
+                } else if (tile.account == user2.address) {
+                    number = 2;
+                } else if (tile.account == user3.address) {
+                    number = 3;
+                } else {
+                    number = '?';
+                }
+                row += number + ' ';
+            }
+            console.log(row);
+        }
+    });
+
+    
 
   });
   
