@@ -81,7 +81,6 @@ contract TOKEN is ERC20, ReentrancyGuard {
     uint256 public constant PRECISION = 1e18;                   // Precision
     uint256 public constant FLOOR_PRICE = PRECISION / DIVISOR;  // Floor price of TOKEN in BASE
 
-
     /*----------  STATE VARIABLES  --------------------------------------*/
 
     // Address state variables

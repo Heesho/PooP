@@ -29,18 +29,14 @@ interface ITOKENRewarder {
     function earned(address account, address _rewardsToken) external view returns (uint256);
 }
 
-interface IGrid {
+interface IGridNFT {
     struct Tile {
         uint256 color;
         address account;
     }
     function placed(address account) external view returns (uint256);
-    function getGrid() external view returns (Tile[50][50] memory);
-    function getRow(uint256 y) external view returns (Tile[50] memory);
-    function getCol(uint256 x) external view returns (Tile[50] memory);
-    function getTile(uint256 x, uint256 y) external view returns (Tile memory);
-    function readXAxis(uint256 xCursor, uint256 yCursor, uint256 length) external view returns (Tile[] memory tiles);
-    function readYAxis(uint256 xCursor, uint256 yCursor, uint256 length) external view returns (Tile[] memory tiles);
+    function getGrid(uint256 tokenId) external view returns (Tile[10][10] memory);
+    function getTile(uint256 tokenId, uint256 x, uint256 y) external view returns (Tile memory);
 }
 
 interface IGridRewarder {
@@ -67,8 +63,8 @@ contract Multicall {
     uint256 public constant DIVISOR = 10000;
     uint256 public constant PRECISION = 1e18;
     address public constant ORACLE = 0x0715A7794a1dc8e42615F059dD6e406A6594651A;
-    uint256 public constant X_MAX = 50;
-    uint256 public constant Y_MAX = 50;
+    uint256 public constant X_MAX = 10;
+    uint256 public constant Y_MAX = 10;
 
     /*----------  STATE VARIABLES  --------------------------------------*/
 
@@ -76,7 +72,7 @@ contract Multicall {
     address public immutable TOKEN;
     address public immutable OTOKEN;
     address public immutable tokenRewarder;
-    address public immutable grid;
+    address public immutable gridNFT;
     address public immutable gridRewarder;
     address public immutable minter;
 
@@ -139,7 +135,7 @@ contract Multicall {
         address _TOKEN,
         address _OTOKEN,
         address _tokenRewarder,
-        address _grid,
+        address _gridNFT,
         address _gridRewarder,
         address _minter
     ) {
@@ -147,7 +143,7 @@ contract Multicall {
         TOKEN = _TOKEN;
         OTOKEN = _OTOKEN;
         tokenRewarder = _tokenRewarder;
-        grid = _grid;
+        gridNFT = _gridNFT;
         gridRewarder = _gridRewarder;
         minter = _minter;
     }
@@ -196,7 +192,7 @@ contract Multicall {
         bondingCurve.accountMaxWithdraw = (account == address(0) ? 0 : bondingCurve.accountStaked - (bondingCurve.accountBorrowDebt * DIVISOR));
 
         bondingCurve.accountTilesOwned = (account == address(0) ? 0 : IGridRewarder(gridRewarder).balanceOf(account));
-        bondingCurve.accountTilesPlaced = (account == address(0) ? 0 : IGrid(grid).placed(account));
+        bondingCurve.accountTilesPlaced = (account == address(0) ? 0 : IGridNFT(gridNFT).placed(account));
 
         return bondingCurve;
     }
@@ -220,16 +216,35 @@ contract Multicall {
         return portfolio;
     }
 
-    function getRow(uint256 y) external view returns (IGrid.Tile[X_MAX] memory row) {
-        return IGrid(grid).getRow(y);
+    function getGrid(uint256 tokenId) external view returns (IGridNFT.Tile[X_MAX][Y_MAX] memory) {
+        return IGridNFT(gridNFT).getGrid(tokenId);
     }
 
-    function getCol(uint256 x) external view returns (IGrid.Tile[Y_MAX] memory col) {
-        return IGrid(grid).getCol(x);
+    function getTile(uint256 tokenId, uint256 x, uint256 y) external view returns (IGridNFT.Tile memory) {
+        return IGridNFT(gridNFT).getTile(tokenId, x, y);
     }
 
-    function getGrid() external view returns (IGrid.Tile[X_MAX][Y_MAX] memory) {
-        return IGrid(grid).getGrid();
+    function getOwnedTiles(uint256 tokenId, address account) external view returns (IGridNFT.Tile[] memory) {
+        IGridNFT.Tile[X_MAX][Y_MAX] memory grid = IGridNFT(gridNFT).getGrid(tokenId);
+        uint256 length = 0;
+        for (uint256 i = 0; i < X_MAX; i++) {
+            for (uint256 j = 0; j < Y_MAX; j++) {
+                if (grid[i][j].account == account) {
+                    length++;
+                }
+            }
+        }
+        IGridNFT.Tile[] memory tiles = new IGridNFT.Tile[](length);
+        uint256 index = 0;
+        for (uint256 i = 0; i < X_MAX; i++) {
+            for (uint256 j = 0; j < Y_MAX; j++) {
+                if (grid[i][j].account == account) {
+                    tiles[index] = grid[i][j];
+                    index++;
+                }
+            }
+        }
+        return tiles;
     }
 
     function quoteBuyIn(uint256 input, uint256 slippageTolerance) external view returns (uint256 output, uint256 slippage, uint256 minOutput, uint256 autoMinOutput) {
