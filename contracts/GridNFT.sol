@@ -35,6 +35,7 @@ contract GridNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGuard,
     uint256 public constant Y_MAX = 10;
     uint256 public constant FEE = 100;
     uint256 public constant DIVISOR = 1000;
+    uint256 public constant MAX_SUPPLY = 100;
 
     /*----------  STATE VARIABLES  --------------------------------------*/
     
@@ -54,13 +55,14 @@ contract GridNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGuard,
 
     /*----------  ERRORS ------------------------------------------------*/
 
-    error Grid__InvalidZeroInput();
-    error Grid__NonMatchingLengths();
-    error Grid__InvalidCoordinates();
+    error GridNFT__InvalidZeroInput();
+    error GridNFT__NonMatchingLengths();
+    error GridNFT__InvalidCoordinates();
+    error GridNFT__MaxSupplyReached();
 
     /*----------  EVENTS ------------------------------------------------*/
 
-    event Grid__Placed(address indexed placer,address indexed account, address indexed prevAccount, uint256 x, uint256 y, uint256 color);
+    event GridNFT__Placed(address indexed placer,address indexed account, address indexed prevAccount, uint256 x, uint256 y, uint256 color);
 
     /*----------  MODIFIERS  --------------------------------------------*/
 
@@ -80,17 +82,17 @@ contract GridNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGuard,
     {
         require(_exists(tokenId), "GridNFT: Grid does not exist");
         uint256 length = x.length;
-        if (length == 0) revert Grid__InvalidZeroInput();
-        if (length != y.length) revert Grid__NonMatchingLengths();
+        if (length == 0) revert GridNFT__InvalidZeroInput();
+        if (length != y.length) revert GridNFT__NonMatchingLengths();
         for (uint256 i = 0; i < length; i++) {
-            if (x[i] > X_MAX || y[i] > Y_MAX) revert Grid__InvalidCoordinates();
+            if (x[i] > X_MAX || y[i] > Y_MAX) revert GridNFT__InvalidCoordinates();
             address prevAccount = grids[tokenId][x[i]][y[i]].account;
             grids[tokenId][x[i]][y[i]].color = color;
             grids[tokenId][x[i]][y[i]].account = account;
             if (prevAccount != address(0)) {
                 IGridRewarder(gridRewarder)._withdraw(AMOUNT, prevAccount);
             }
-            emit Grid__Placed(msg.sender, account, prevAccount, x[i], y[i], color);
+            emit GridNFT__Placed(msg.sender, account, prevAccount, x[i], y[i], color);
         }
         uint256 amount = length * AMOUNT;
         placed[account] += (amount);
@@ -102,11 +104,11 @@ contract GridNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGuard,
 
     /*----------  RESTRICTED FUNCTIONS  ---------------------------------*/
 
-    function safeMint(address to, string memory uri) public onlyOwner {
+    function safeMint(address to) public onlyOwner {
         uint256 tokenId = _tokenIdCounter.current();
+        if (tokenId >= MAX_SUPPLY) revert GridNFT__MaxSupplyReached();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
-        _setTokenURI(tokenId, uri);
     }
 
     function setColor(uint256 color, string memory hexCode) public onlyOwner {

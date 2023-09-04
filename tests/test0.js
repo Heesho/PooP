@@ -79,7 +79,7 @@ describe("test0", function () {
         const GridNFTArtifact = await ethers.getContractFactory("GridNFT");
         const gridNFTContract = await GridNFTArtifact.deploy(OTOKEN.address, gridRewarderFactory.address);
         gridNFT = await ethers.getContractAt("GridNFT", gridNFTContract.address);
-        await gridNFT.safeMint(user1.address, 1);
+        await gridNFT.safeMint(user1.address);
         console.log("- GridNFT Initialized");
 
         //initialize GridRewarder
