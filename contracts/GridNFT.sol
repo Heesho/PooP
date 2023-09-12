@@ -49,8 +49,9 @@ contract GridNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGuard,
         address account;
     }
 
+    string[] public colors;
+    uint256 public totalPlaced;
     mapping(address => uint256) public placed;
-    mapping(uint256 => string) public colorPalette;
     mapping(uint256 => Tile[X_MAX][Y_MAX]) public grids;
 
     /*----------  ERRORS ------------------------------------------------*/
@@ -59,10 +60,12 @@ contract GridNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGuard,
     error GridNFT__NonMatchingLengths();
     error GridNFT__InvalidCoordinates();
     error GridNFT__MaxSupplyReached();
+    error GridNFT__InvalidColor();
+    error GridNFT__TokenIdDoesNotExist();
 
     /*----------  EVENTS ------------------------------------------------*/
 
-    event GridNFT__Placed(address indexed placer,address indexed account, address indexed prevAccount, uint256 x, uint256 y, uint256 color);
+    event GridNFT__Placed(address indexed placer,address indexed account, address indexed prevAccount, uint256 tokenId, uint256 x, uint256 y, uint256 color);
 
     /*----------  MODIFIERS  --------------------------------------------*/
 
@@ -80,7 +83,8 @@ contract GridNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGuard,
         external 
         nonReentrant 
     {
-        require(_exists(tokenId), "GridNFT: Grid does not exist");
+        if (!_exists(tokenId)) revert GridNFT__TokenIdDoesNotExist();
+        if (color >= colors.length) revert GridNFT__InvalidColor();
         uint256 length = x.length;
         if (length == 0) revert GridNFT__InvalidZeroInput();
         if (length != y.length) revert GridNFT__NonMatchingLengths();
@@ -92,9 +96,10 @@ contract GridNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGuard,
             if (prevAccount != address(0)) {
                 IGridRewarder(gridRewarder)._withdraw(AMOUNT, prevAccount);
             }
-            emit GridNFT__Placed(msg.sender, account, prevAccount, x[i], y[i], color);
+            emit GridNFT__Placed(msg.sender, account, prevAccount, tokenId, x[i], y[i], color);
         }
         uint256 amount = length * AMOUNT;
+        totalPlaced += amount;
         placed[account] += (amount);
         uint256 fee = amount * FEE / DIVISOR;
         IERC20(OTOKEN).transferFrom(msg.sender, ownerOf(tokenId), fee);
@@ -104,16 +109,16 @@ contract GridNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGuard,
 
     /*----------  RESTRICTED FUNCTIONS  ---------------------------------*/
 
-    function safeMint(address to) public onlyOwner {
+    function safeMint(address to) external onlyOwner {
         uint256 tokenId = _tokenIdCounter.current();
         if (tokenId >= MAX_SUPPLY) revert GridNFT__MaxSupplyReached();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
     }
 
-    function setColor(uint256 color, string memory hexCode) public onlyOwner {
-        colorPalette[color] = hexCode;
-    }   
+    function setColors(string[] memory _colors) external onlyOwner {
+        colors = _colors;
+    }
 
     function concatenateParts(string[100] memory parts) internal pure returns (string memory) {
         string memory svgPart = parts[0];
@@ -123,18 +128,7 @@ contract GridNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGuard,
         return svgPart;
     }
 
-    /*----------  VIEW FUNCTIONS  ---------------------------------------*/
-
-    function getGrid(uint256 tokenId) external view returns (Tile[X_MAX][Y_MAX] memory) {
-        require(_exists(tokenId), "GridNFT: Grid does not exist");
-        return grids[tokenId];
-    }
-
-    function getTile(uint256 tokenId, uint256 x, uint256 y) external view returns (Tile memory) {
-        return grids[tokenId][x][y];
-    }
-
-    function generateSVG(uint256 tokenId) public view returns (string memory) {
+    function generateSVG(uint256 tokenId) internal view returns (string memory) {
         require(_exists(tokenId), "GridNFT: Grid does not exist");
         string[100] memory parts;
         uint counter = 0;
@@ -149,7 +143,7 @@ contract GridNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGuard,
                     '" y="',
                     Strings.toString(i * 35),  
                     '" width="35" height="35" fill="', 
-                    colorPalette[grids[tokenId][i][j].color],
+                    colors[grids[tokenId][i][j].color],
                     '" />'
                 ));
                 counter++;
@@ -160,6 +154,25 @@ contract GridNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGuard,
         string memory svgPart3 = '</g></svg>';
 
         return string(abi.encodePacked(svgPart1, svgPart2, svgPart3));
+    }
+
+    /*----------  VIEW FUNCTIONS  ---------------------------------------*/
+
+    function getGrid(uint256 tokenId) external view returns (Tile[X_MAX][Y_MAX] memory) {
+        require(_exists(tokenId), "GridNFT: Grid does not exist");
+        return grids[tokenId];
+    }
+
+    function getTile(uint256 tokenId, uint256 x, uint256 y) external view returns (Tile memory) {
+        return grids[tokenId][x][y];
+    }
+
+    function getColor(uint256 index) external view returns (string memory color) {
+        return colors[index];
+    }
+
+    function getColors() external view returns (string[] memory) {
+        return colors;
     }
 
     /*----------  OVERRIDES  --------------------------------------------*/

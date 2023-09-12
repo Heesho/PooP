@@ -205,7 +205,7 @@ contract TOKENRewarder is ReentrancyGuard, Ownable {
         _balances[account] = _balances[account] - amount;
         _totalSupplyTOKEN -= amount;
         _balancesTOKEN[account] -= amount;
-        if (_balancesTOKEN[account] < ITOKEN(address(TOKEN)).debts(account)) revert TOKENRewarder__CollateralActive(); // incorrect calc must fix
+        if (_balancesTOKEN[account] < ITOKEN(address(TOKEN)).debts(account) * 10000) revert TOKENRewarder__CollateralActive(); // incorrect calc must fix
         emit TOKENRewarder__Withdrawn(account, amount);
     }
 

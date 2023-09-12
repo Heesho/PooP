@@ -11,12 +11,17 @@ const two = convert("2", 18);
 const five = convert("5", 18);
 const ten = convert("10", 18);
 const twenty = convert("20", 18);
+const fifty = convert("50", 18);
 const ninety = convert("90", 18);
 const oneHundred = convert("100", 18);
 const twoHundred = convert("200", 18);
 const fiveHundred = convert("500", 18);
 const eightHundred = convert("800", 18);
 const oneThousand = convert("1000", 18);
+
+function getRndInteger(min, max) {
+    return Math.floor(Math.random() * (max - min) ) + min;
+}
 
 let owner, multisig, treasury, user0, user1, user2, user3;
 let TOKENRewarderFactory, OTOKENFactory, feesFactory, gridRewarderFactory;
@@ -79,7 +84,6 @@ describe("test0", function () {
         const GridNFTArtifact = await ethers.getContractFactory("GridNFT");
         const gridNFTContract = await GridNFTArtifact.deploy(OTOKEN.address, gridRewarderFactory.address);
         gridNFT = await ethers.getContractAt("GridNFT", gridNFTContract.address);
-        await gridNFT.safeMint(user1.address);
         console.log("- GridNFT Initialized");
 
         //initialize GridRewarder
@@ -101,51 +105,27 @@ describe("test0", function () {
         // System set-up
         await OTOKEN.connect(owner).setMinter(minter.address);
         await minter.initialize();
-        await OTOKEN.connect(owner).transfer(user1.address, oneHundred);
-        await OTOKEN.connect(owner).transfer(user1.address, oneHundred);
-        await OTOKEN.connect(owner).transfer(user2.address, oneHundred);
-        await OTOKEN.connect(owner).transfer(user3.address, oneHundred);
+        await OTOKEN.connect(owner).transfer(user1.address, oneThousand);
         console.log("- System set up");
+
+        await gridNFT.safeMint(user1.address); // 0
+        await gridNFT.safeMint(user1.address); // 1
+        await gridNFT.safeMint(user1.address); // 2
+        await gridNFT.safeMint(user1.address); // 3
+        await gridNFT.safeMint(user1.address); // 4
+        await gridNFT.safeMint(user1.address); // 5
+        await gridNFT.safeMint(user1.address); // 6
+        await gridNFT.safeMint(user1.address); // 7
+        await gridNFT.safeMint(user1.address); // 8
+        await gridNFT.safeMint(user1.address); // 9
+        await gridNFT.safeMint(user1.address); // 10
+        await gridNFT.safeMint(user1.address); // 11
+        console.log("- GridNFTs minted");
+
 
         console.log("Initialization Complete");
         console.log();
 
-    });
-
-    it("Get encoded SVG", async function () {
-        console.log("******************************************************");
-        console.log(await gridNFT.generateSVG(0));
-    });
-
-    it("User1 places a tile on [0,0]", async function () {
-        console.log("******************************************************");
-        await OTOKEN.connect(user1).approve(gridNFT.address, one);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [0], [0], 1);
-    });
-
-    it("Grid", async function () {
-        console.log("******************************************************");
-        let res = await gridNFT.getGrid(0);
-        for (let i = 0; i < 10; i++) {
-            let row = '';
-            for (let j = 0; j < 10; j++) {
-                let tile = res[i][j];
-                let number;
-                if (tile.account == AddressZero) {
-                    number = '.';
-                } else if (tile.account == user1.address) {
-                    number = 1;
-                } else if (tile.account == user2.address) {
-                    number = 2;
-                } else if (tile.account == user3.address) {
-                    number = 3;
-                } else {
-                    number = '?';
-                }
-                row += number + ' ';
-            }
-            console.log(row);
-        }
     });
 
     it("BondingCurveData, user1", async function () {
@@ -175,115 +155,195 @@ describe("test0", function () {
         console.log("Borrow Debt: ", divDec(res.accountBorrowDebt), "BASE");
         console.log("Max Withdraw: ", divDec(res.accountMaxWithdraw), "TOKEN");
         console.log();
-        console.log("Tiles Owned: ", divDec(res.accountTilesOwned));
-        console.log("Tiles Placed: ", divDec(res.accountTilesPlaced));
     });
-
-    it("User1 places a tile on [9,9]", async function () {
-        console.log("******************************************************");
-        await OTOKEN.connect(user1).approve(gridNFT.address, one);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [9], [9], 2);
-    });
-
-    // it("User1 places a tile on many tiles", async function () {
-    //     console.log("******************************************************");
-    //     await OTOKEN.connect(user1).approve(grid.address, five);
-    //     await grid.connect(user1).placeFor(user1.address, [0, 1, 1, 10, 40], [0, 4, 12, 26, 49], 0);
-    // });
-
-    // it("User2 places a tile on many tiles", async function () {
-    //     console.log("******************************************************");
-    //     await OTOKEN.connect(user2).approve(grid.address, five);
-    //     await grid.connect(user2).placeFor(user2.address, [34, 11, 1, 10, 39], [39, 4, 2, 6, 33], 0);
-    // });
-
-    // it("User3 places a tile on many tiles", async function () {
-    //     console.log("******************************************************");
-    //     await OTOKEN.connect(user3).approve(grid.address, ten);
-    //     await grid.connect(user3).placeFor(user3.address, [0, 1, 1, 10, 40, 39, 38, 37, 36, 35], [0, 4, 12, 26, 2, 39, 38, 37, 36, 35], 0);
-    // });
-
-    // it("User1 places a tile on many tiles", async function () {
-    //     console.log("******************************************************");
-    //     await OTOKEN.connect(user1).approve(grid.address, twenty);
-    //     await grid.connect(user1).placeFor(user1.address, [0, 1, 1, 10, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30], [0, 4, 12, 26, 2, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30], 0);
-    // });
-
-    // it("User2 places a tile on many tiles", async function () {
-    //     console.log("******************************************************");
-    //     await OTOKEN.connect(user2).approve(grid.address, twenty);
-    //     await grid.connect(user2).placeFor(user2.address, [22, 11, 1, 10, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29], [39, 4, 2, 6, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23], 0);
-    // });
-
-    // it("User3 places a tile on many tiles", async function () {
-    //     console.log("******************************************************");
-    //     await OTOKEN.connect(user3).approve(grid.address, twenty);
-    //     await grid.connect(user3).placeFor(user3.address, [0, 1, 1, 10, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30], [0, 4, 12, 26, 2, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30], 0);
-    // });
 
     it("Set colors", async function () {
         console.log("******************************************************");
-        await gridNFT.setColor(1, "#28fc03");
-        await gridNFT.setColor(2, "#fc5603");
-        await gridNFT.setColor(3, "#fc0317");
-        await gridNFT.setColor(4, "#03a5fc");
-        await gridNFT.setColor(5, "#db03fc");
+        await gridNFT.setColors(["#000000", "#18fc03", "#fce303", "#fc0317", "#03a5fc", "#db03fc"]);
     });
 
-    it("User1 places a tiles", async function () {
+    it("User1 places tiles randomly", async function () {
         console.log("******************************************************");
-        await OTOKEN.connect(user1).approve(gridNFT.address, five);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4], [0, 0, 0, 0, 0], 2);
+        await OTOKEN.connect(user1).approve(gridNFT.address, fifty);
+        for (let i = 0; i < 50; i++) {
+            await gridNFT.connect(user1).placeFor(0, user1.address, [getRndInteger(0, 9)], [getRndInteger(0,9)], getRndInteger(0,6));
+        }
     });
 
-    it("User1 places a tiles", async function () {
+    it("User1 places tiles randomly", async function () {
         console.log("******************************************************");
-        await OTOKEN.connect(user1).approve(gridNFT.address, five);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [6, 3, 2, 6, 9], [2, 2, 5, 8, 1], 4);
+        await OTOKEN.connect(user1).approve(gridNFT.address, fifty);
+        for (let i = 0; i < 50; i++) {
+            await gridNFT.connect(user1).placeFor(1, user1.address, [getRndInteger(0, 9)], [getRndInteger(0,9)], getRndInteger(0,6));
+        }
     });
 
-    it("User1 places a tiles", async function () {
+    it("User1 places tiles randomly", async function () {
         console.log("******************************************************");
-        await OTOKEN.connect(user1).approve(gridNFT.address, five);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [1, 2, 3, 4, 5], [9, 8, 7, 6, 5], 1);
+        await OTOKEN.connect(user1).approve(gridNFT.address, fifty);
+        for (let i = 0; i < 50; i++) {
+            await gridNFT.connect(user1).placeFor(2, user1.address, [getRndInteger(0, 9)], [getRndInteger(0,9)], getRndInteger(0,6));
+        }
     });
 
-    it("User1 places a tiles", async function () {
+    it("User1 places tiles randomly", async function () {
         console.log("******************************************************");
-        await OTOKEN.connect(user1).approve(gridNFT.address, five);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [7, 3, 5, 6, 2], [8, 1, 2, 0, 3], 3);
+        await OTOKEN.connect(user1).approve(gridNFT.address, fifty);
+        for (let i = 0; i < 50; i++) {
+            await gridNFT.connect(user1).placeFor(3, user1.address, [getRndInteger(0, 9)], [getRndInteger(0,9)], getRndInteger(0,6));
+        }
     });
 
-    it("User1 places a tiles", async function () {
+    it("User1 places tiles randomly", async function () {
         console.log("******************************************************");
-        await OTOKEN.connect(user1).approve(gridNFT.address, five);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [1, 1, 1, 1, 1], [5, 4, 2, 1, 3], 5);
+        await OTOKEN.connect(user1).approve(gridNFT.address, fifty);
+        for (let i = 0; i < 50; i++) {
+            await gridNFT.connect(user1).placeFor(4, user1.address, [getRndInteger(0, 9)], [getRndInteger(0,9)], getRndInteger(0,6));
+        }
     });
 
-    it("User 1 places on all tiles", async function () {
+    it("User1 places tiles randomly", async function () {
         console.log("******************************************************");
-        await OTOKEN.connect(user1).approve(gridNFT.address, oneHundred);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 0);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 1);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2], 2);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [3, 3, 3, 3, 3, 3, 3, 3, 3, 3], 3);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [4, 4, 4, 4, 4, 4, 4, 4, 4, 4], 4);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [5, 5, 5, 5, 5, 5, 5, 5, 5, 5], 5);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [6, 6, 6, 6, 6, 6, 6, 6, 6, 6], 1);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [7, 7, 7, 7, 7, 7, 7, 7, 7, 7], 2);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [8, 8, 8, 8, 8, 8, 8, 8, 8, 8], 3);
-        await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [9, 9, 9, 9, 9, 9, 9, 9, 9, 9], 4);
+        await OTOKEN.connect(user1).approve(gridNFT.address, fifty);
+        for (let i = 0; i < 50; i++) {
+            await gridNFT.connect(user1).placeFor(5, user1.address, [getRndInteger(0, 9)], [getRndInteger(0,9)], getRndInteger(0,6));
+        }
     });
 
-    it("Get encoded SVG", async function () {
+    it("User1 places tiles randomly", async function () {
         console.log("******************************************************");
-        console.log(await gridNFT.generateSVG(0));
+        await OTOKEN.connect(user1).approve(gridNFT.address, fifty);
+        for (let i = 0; i < 50; i++) {
+            await gridNFT.connect(user1).placeFor(6, user1.address, [getRndInteger(0, 9)], [getRndInteger(0,9)], getRndInteger(0,6));
+        }
     });
 
-    // it("Get user1s owned tiles", async function () {
+    it("User1 places tiles randomly", async function () {
+        console.log("******************************************************");
+        await OTOKEN.connect(user1).approve(gridNFT.address, fifty);
+        for (let i = 0; i < 50; i++) {
+            await gridNFT.connect(user1).placeFor(7, user1.address, [getRndInteger(0, 9)], [getRndInteger(0,9)], getRndInteger(0,6));
+        }
+    });
+
+    it("User1 places tiles randomly", async function () {
+        console.log("******************************************************");
+        await OTOKEN.connect(user1).approve(gridNFT.address, fifty);
+        for (let i = 0; i < 50; i++) {
+            await gridNFT.connect(user1).placeFor(8, user1.address, [getRndInteger(0, 9)], [getRndInteger(0,9)], getRndInteger(0,6));
+        }
+    });
+
+    it("User1 places tiles randomly", async function () {
+        console.log("******************************************************");
+        await OTOKEN.connect(user1).approve(gridNFT.address, fifty);
+        for (let i = 0; i < 50; i++) {
+            await gridNFT.connect(user1).placeFor(9, user1.address, [getRndInteger(0, 9)], [getRndInteger(0,9)], getRndInteger(0,6));
+        }
+    });
+
+    it("User1 places tiles randomly", async function () {
+        console.log("******************************************************");
+        await OTOKEN.connect(user1).approve(gridNFT.address, fifty);
+        for (let i = 0; i < 50; i++) {
+            await gridNFT.connect(user1).placeFor(10, user1.address, [getRndInteger(0, 9)], [getRndInteger(0,9)], getRndInteger(0,6));
+        }
+    });
+
+    // it("User 1 places on all tiles", async function () {
     //     console.log("******************************************************");
-    //     console.log(await multicall.getOwnedTiles(0, user1.address));
+    //     await OTOKEN.connect(user1).approve(gridNFT.address, oneHundred);
+    //     await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 0);
+    //     await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 1);
+    //     await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2], 2);
+    //     await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [3, 3, 3, 3, 3, 3, 3, 3, 3, 3], 3);
+    //     await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [4, 4, 4, 4, 4, 4, 4, 4, 4, 4], 4);
+    //     await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [5, 5, 5, 5, 5, 5, 5, 5, 5, 5], 5);
+    //     await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [6, 6, 6, 6, 6, 6, 6, 6, 6, 6], 1);
+    //     await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [7, 7, 7, 7, 7, 7, 7, 7, 7, 7], 2);
+    //     await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [8, 8, 8, 8, 8, 8, 8, 8, 8, 8], 3);
+    //     await gridNFT.connect(user1).placeFor(0, user1.address, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [9, 9, 9, 9, 9, 9, 9, 9, 9, 9], 4);
     // });
+
+    // it("Get encoded SVG", async function () {
+    //     console.log("******************************************************");
+    //     console.log(await gridNFT.generateSVG(0));
+    // });
+
+    it("Grid Data, user1, 0", async function () {
+        console.log("******************************************************");
+        let res = await multicall.gridData(user1.address, 0);
+        console.log("GLOBAL DATA");
+        console.log("Tiles Owned: ", divDec(res.tilesOwned));
+        console.log("Tiles Placed: ", divDec(res.tilesPlaced));
+        console.log("Tile Reward Per Week: ", divDec(res.tilesRewardForDuration));
+        console.log("USER DATA");
+        console.log("Tiles Owned: ", divDec(res.accountTilesOwned));
+        console.log("Tiles Placed: ", divDec(res.accountTilesPlaced));
+        console.log("Tiles owned on TokenId: ", res.accountTilesOwnedTokenId);
+        let rowCoord = "";
+        for (let i = 0; i < res.accountTilesOwnedTokenId; i++) {
+            rowCoord += '(' + res.accountTilesOwnedCoordsTokenId[i].x + ', ' + res.accountTilesOwnedCoordsTokenId[i].y + ') ';
+        }
+        console.log("Owned Tiles: ", rowCoord);
+        console.log("GRID DATA");
+        let rowColor = "";
+        for (let i = 0; i < res.colorsLength; i++) {
+            rowColor += res.colors[i] + ' ';
+        }
+        console.log("Colors: ", rowColor);
+        for (let i = 0; i < 10; i++) {
+            let row = '';
+            for (let j = 0; j < 10; j++) {
+                let tile = res.grid[i][j];
+                let number;
+                if (tile.account == AddressZero) {
+                    number = '.';
+                } else if (tile.account == user1.address) {
+                    number = 1;
+                } else if (tile.account == user2.address) {
+                    number = 2;
+                } else if (tile.account == user3.address) {
+                    number = 3;
+                } else {
+                    number = '?';
+                }
+                row += number + ' ';
+            }
+            console.log(row);
+        }
+
+    });
+
+    it("Get encoded SVGs", async function () {
+        console.log("******************************************************");
+        let res = await multicall.getSVGs(0, 12);
+        console.log(res[0]);
+        console.log();
+        console.log(res[1]);
+        console.log();
+        console.log(res[2]);
+        console.log();
+        console.log(res[3]);
+        console.log();
+        console.log(res[4]);
+        console.log();
+        console.log(res[5]);
+        console.log();
+        console.log(res[6]);
+        console.log();
+        console.log(res[7]);
+        console.log();
+        console.log(res[8]);
+        console.log();
+        console.log(res[9]);
+        console.log();
+        console.log(res[10]);
+        console.log();
+        console.log(res[11]);
+        console.log();
+    });
+
 
 
     

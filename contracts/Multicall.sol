@@ -34,9 +34,12 @@ interface IGridNFT {
         uint256 color;
         address account;
     }
+    function totalPlaced() external view returns (uint256);
     function placed(address account) external view returns (uint256);
     function getGrid(uint256 tokenId) external view returns (Tile[10][10] memory);
     function getTile(uint256 tokenId, uint256 x, uint256 y) external view returns (Tile memory);
+    function getColors() external view returns (string[] memory);
+    function tokenURI(uint256 tokenId) external view returns (string memory);
 }
 
 interface IGridRewarder {
@@ -118,8 +121,23 @@ contract Multicall {
         uint256 accountBorrowDebt;      // C21
         uint256 accountMaxWithdraw;     // C22
 
-        uint256 accountTilesOwned;      // C23
-        uint256 accountTilesPlaced;     // C24
+    }
+
+    struct Grid {
+        uint256 tilesOwned;
+        uint256 tilesPlaced;
+        uint256 tileRewardForDuration;
+
+        string[] colors;
+        uint256 colorsLength;
+
+        IGridNFT.Tile[X_MAX][Y_MAX] grid;
+
+        uint256 accountTilesOwned;
+        uint256 accountTilesPlaced;
+
+        uint256 accountTilesOwnedTokenId;
+        Coord[] accountTilesOwnedCoordsTokenId;
     }
 
     struct Portfolio {
@@ -191,10 +209,31 @@ contract Multicall {
         bondingCurve.accountBorrowDebt = (account == address(0) ? 0 : ITOKEN(TOKEN).debts(account));
         bondingCurve.accountMaxWithdraw = (account == address(0) ? 0 : bondingCurve.accountStaked - (bondingCurve.accountBorrowDebt * DIVISOR));
 
-        bondingCurve.accountTilesOwned = (account == address(0) ? 0 : IGridRewarder(gridRewarder).balanceOf(account));
-        bondingCurve.accountTilesPlaced = (account == address(0) ? 0 : IGridNFT(gridNFT).placed(account));
-
         return bondingCurve;
+    }
+
+    function gridData(address account, uint256 tokenId) external view returns (Grid memory grid) {
+        grid.tilesOwned = IGridRewarder(gridRewarder).totalSupply();
+        grid.tilesPlaced = IGridNFT(gridNFT).totalPlaced();
+        grid.tileRewardForDuration = (grid.tilesOwned == 0 ? 0 : IGridRewarder(gridRewarder).getRewardForDuration(OTOKEN) * 1e18 / grid.tilesOwned);
+
+        grid.colors = IGridNFT(gridNFT).getColors();
+        grid.colorsLength = grid.colors.length;
+
+        grid.grid = IGridNFT(gridNFT).getGrid(tokenId);
+
+        grid.accountTilesOwned = (account == address(0) ? 0 : IGridRewarder(gridRewarder).balanceOf(account));
+        grid.accountTilesPlaced = (account == address(0) ? 0 : IGridNFT(gridNFT).placed(account));
+
+        if (account == address(0)) {
+            grid.accountTilesOwnedTokenId = 0;
+            grid.accountTilesOwnedCoordsTokenId = new Coord[](0);
+        } else {
+            grid.accountTilesOwnedCoordsTokenId = getOwnedTiles(tokenId, account);
+            grid.accountTilesOwnedTokenId = grid.accountTilesOwnedCoordsTokenId.length;
+        }
+
+        return grid;
     }
 
     function portfolioData(address account) external view returns (Portfolio memory portfolio) {
@@ -224,7 +263,8 @@ contract Multicall {
         return IGridNFT(gridNFT).getTile(tokenId, x, y);
     }
 
-    function getOwnedTiles(uint256 tokenId, address account) external view returns (IGridNFT.Tile[] memory) {
+    // return x, y coordinates instead of tiles
+    function getOwnedTiles(uint256 tokenId, address account) public view returns (Coord[] memory) {
         IGridNFT.Tile[X_MAX][Y_MAX] memory grid = IGridNFT(gridNFT).getGrid(tokenId);
         uint256 length = 0;
         for (uint256 i = 0; i < X_MAX; i++) {
@@ -234,17 +274,29 @@ contract Multicall {
                 }
             }
         }
-        IGridNFT.Tile[] memory tiles = new IGridNFT.Tile[](length);
+        Coord[] memory coords = new Coord[](length);
         uint256 index = 0;
         for (uint256 i = 0; i < X_MAX; i++) {
             for (uint256 j = 0; j < Y_MAX; j++) {
                 if (grid[i][j].account == account) {
-                    tiles[index] = grid[i][j];
+                    coords[index] = Coord(i, j);
                     index++;
                 }
             }
         }
-        return tiles;
+        return coords;
+    }
+
+    function getSVGs(uint256 start, uint256 end) external view returns (string[] memory) {
+        string[] memory svgs = new string[](end - start);
+        for (uint256 i = start; i < end; i++) {
+            svgs[i - start] = IGridNFT(gridNFT).tokenURI(i);
+        }
+        return svgs;
+    }
+
+    function getSVG(uint256 tokenId) external view returns (string memory) {
+        return IGridNFT(gridNFT).tokenURI(tokenId);
     }
 
     function quoteBuyIn(uint256 input, uint256 slippageTolerance) external view returns (uint256 output, uint256 slippage, uint256 minOutput, uint256 autoMinOutput) {

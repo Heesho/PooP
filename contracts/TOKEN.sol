@@ -102,6 +102,7 @@ contract TOKEN is ERC20, ReentrancyGuard {
     /*----------  ERRORS ------------------------------------------------*/
 
     error TOKEN__InvalidZeroInput();
+    error TOKEN__InsufficientInput();
     error TOKEN__SwapExpired();
     error TOKEN__ExceedsSwapSlippageTolerance();
     error TOKEN__ExceedsSwapMarketReserves();
@@ -121,6 +122,11 @@ contract TOKEN is ERC20, ReentrancyGuard {
 
     modifier nonZeroInput(uint256 _amount) {
         if (_amount == 0) revert TOKEN__InvalidZeroInput();
+        _;
+    }
+
+    modifier sufficientInput(uint256 _amount) {
+        if (_amount < DIVISOR) revert TOKEN__InsufficientInput();
         _;
     }
 
@@ -176,7 +182,7 @@ contract TOKEN is ERC20, ReentrancyGuard {
     function buy(uint256 amountBase, uint256 minToken, uint256 expireTimestamp, address toAccount, address provider) 
         external
         nonReentrant
-        nonZeroInput(amountBase)
+        sufficientInput(amountBase)
         nonExpiredSwap(expireTimestamp)
         returns (bool)
     {
@@ -216,7 +222,7 @@ contract TOKEN is ERC20, ReentrancyGuard {
     function sell(uint256 amountToken, uint256 minBase, uint256 expireTimestamp, address toAccount, address provider) 
         external
         nonReentrant
-        nonZeroInput(amountToken)
+        sufficientInput(amountToken)
         nonExpiredSwap(expireTimestamp)
         returns (bool)
     {
@@ -256,7 +262,7 @@ contract TOKEN is ERC20, ReentrancyGuard {
     function exercise(uint256 amountOToken, address toAccount) 
         external
         nonReentrant
-        nonZeroInput(amountOToken)
+        sufficientInput(amountOToken)
         returns (bool)
     {
         address account = msg.sender;
@@ -277,7 +283,7 @@ contract TOKEN is ERC20, ReentrancyGuard {
     function redeem(uint256 amountToken, address toAccount)
         external
         nonReentrant
-        nonZeroInput(amountToken)
+        sufficientInput(amountToken)
         returns (bool)
     {
         address account = msg.sender;
