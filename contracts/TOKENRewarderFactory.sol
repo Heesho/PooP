@@ -293,6 +293,10 @@ contract TOKENRewarder is ReentrancyGuard, Ownable {
         return rewardData[_rewardsToken].rewardRate * DURATION;
     }
 
+    function getMaxWithdraw(address _account) external view returns (uint256) {
+        return _balancesTOKEN[_account] - ITOKEN(address(TOKEN)).debts(_account) * 10000;
+    }
+
 }
 
 

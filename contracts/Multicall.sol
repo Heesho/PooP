@@ -166,6 +166,10 @@ contract Multicall {
         minter = _minter;
     }
 
+    function getPriceBase() public view returns (uint256) {
+        return IEACAggregatorProxy(ORACLE).latestAnswer() * 1e18 / 1e8;
+    }
+
     function swapCardData() external view returns (SwapCard memory swapCard) {
         swapCard.frBASE = ITOKEN(TOKEN).frBASE();
         swapCard.mrvBASE = ITOKEN(TOKEN).mrvBASE();
@@ -177,8 +181,7 @@ contract Multicall {
     }
 
     function bondingCurveData(address account) external view returns (BondingCurve memory bondingCurve) {
-        // bondingCurve.priceBASE = IEACAggregatorProxy(ORACLE).latestAnswer() * 1e18 / 1e8;
-        bondingCurve.priceBASE = 1e18;
+        bondingCurve.priceBASE = getPriceBase();
         bondingCurve.priceTOKEN = ITOKEN(TOKEN).getMarketPrice() * bondingCurve.priceBASE / 1e18;
         bondingCurve.priceOTOKEN = ITOKEN(TOKEN).getOTokenPrice() * bondingCurve.priceBASE / 1e18;
         bondingCurve.maxMarketSell = ITOKEN(TOKEN).getMaxSell();
@@ -237,20 +240,21 @@ contract Multicall {
     }
 
     function portfolioData(address account) external view returns (Portfolio memory portfolio) {
-        // uint256 priceBASE = IEACAggregatorProxy(ORACLE).latestAnswer() * 1e18 / 1e8;
-        uint256 priceBASE = 1e18;
+        uint256 priceBASE = getPriceBase();
 
         portfolio.total = (account == address(0) ? 0 : priceBASE * ((IERC20(BASE).balanceOf(account)) 
             + ((IERC20(TOKEN).balanceOf(account) + ITOKENRewarder(tokenRewarder).balanceOfTOKEN(account)) * ITOKEN(TOKEN).getMarketPrice() / 1e18) 
             + (IERC20(OTOKEN).balanceOf(account) * ITOKEN(TOKEN).getOTokenPrice() / 1e18)) / 1e18);
 
-        portfolio.stakingRewards = (account == address(0) ? 0 : priceBASE * (ITOKENRewarder(tokenRewarder).getRewardForDuration(BASE)
+        portfolio.stakingRewards = (account == address(0) ? 0 : (ITOKENRewarder(tokenRewarder).totalSupply() == 0 ? 0 : 
+            priceBASE * (ITOKENRewarder(tokenRewarder).getRewardForDuration(BASE)
             + (ITOKENRewarder(tokenRewarder).getRewardForDuration(TOKEN) * ITOKEN(TOKEN).getMarketPrice() / 1e18)
             + (ITOKENRewarder(tokenRewarder).getRewardForDuration(OTOKEN) * ITOKEN(TOKEN).getOTokenPrice() / 1e18)) / 1e18
-            * ITOKENRewarder(tokenRewarder).balanceOf(account) / ITOKENRewarder(tokenRewarder).totalSupply());
+            * ITOKENRewarder(tokenRewarder).balanceOf(account) / ITOKENRewarder(tokenRewarder).totalSupply()));
 
-        portfolio.gridRewards = (account == address(0) ? 0  : IGridRewarder(gridRewarder).getRewardForDuration(OTOKEN) * 
-            IGridRewarder(gridRewarder).balanceOf(account) / IGridRewarder(gridRewarder).totalSupply() * ITOKEN(TOKEN).getOTokenPrice() / 1e18 * priceBASE / 1e18);
+        portfolio.gridRewards = (account == address(0) ? 0  : (IGridRewarder(gridRewarder).totalSupply() == 0 ? 0 : 
+            IGridRewarder(gridRewarder).getRewardForDuration(OTOKEN) * IGridRewarder(gridRewarder).balanceOf(account) 
+            / IGridRewarder(gridRewarder).totalSupply() * ITOKEN(TOKEN).getOTokenPrice() / 1e18 * priceBASE / 1e18));
 
         return portfolio;
     }

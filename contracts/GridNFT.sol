@@ -11,8 +11,8 @@ import "@openzeppelin/contracts/utils/Base64.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-interface IOTOKEN {
-    function burnFrom(address account, uint256 amount) external;
+interface ITOKENRewarder {
+    function burnFor(address account, uint256 amount) external;
 }
 
 interface IGridRewarder {
@@ -41,6 +41,7 @@ contract GridNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGuard,
     
     address public immutable OTOKEN;
     address public immutable gridRewarder;
+    address public immutable TOKENRewarder;
 
     Counters.Counter private _tokenIdCounter;
 
@@ -71,11 +72,12 @@ contract GridNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGuard,
 
     /*----------  FUNCTIONS  --------------------------------------------*/
 
-    constructor(address _OTOKEN, address _gridRewarderFactory) 
+    constructor(address _OTOKEN, address _gridRewarderFactory, address _TOKENRewarder) 
         ERC721("GridNFT", "GRID") 
     {
         OTOKEN = _OTOKEN;
         gridRewarder = IGridRewarderFactory(_gridRewarderFactory).createGridRewarder(address(this));
+        TOKENRewarder = _TOKENRewarder;
         IGridRewarder(gridRewarder).addReward(_OTOKEN);
     }
 
@@ -103,7 +105,9 @@ contract GridNFT is ERC721, ERC721Enumerable, ERC721URIStorage, ReentrancyGuard,
         placed[account] += (amount);
         uint256 fee = amount * FEE / DIVISOR;
         IERC20(OTOKEN).transferFrom(msg.sender, ownerOf(tokenId), fee);
-        IOTOKEN(OTOKEN).burnFrom(msg.sender, amount - fee);
+        IERC20(OTOKEN).transferFrom(msg.sender, address(this), amount - fee);
+        IERC20(OTOKEN).approve(TOKENRewarder, amount - fee);
+        ITOKENRewarder(TOKENRewarder).burnFor(msg.sender, amount - fee);
         IGridRewarder(gridRewarder)._deposit(amount, account);
     }
 
