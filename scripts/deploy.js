@@ -178,11 +178,9 @@ async function verifyTOKEN() {
     address: TOKEN.address,
     contract: "contracts/TOKEN.sol:TOKEN",
     constructorArguments: [
-      BASE_ADDRESS,
-      convert(MARKET_RESERVES, 18),
+      BASE.address,
       OTOKENFactory.address,
-      VTOKENFactory.address,
-      rewarderFactory.address,
+      TOKENRewarderFactory.address,
       feesFactory.address,
     ],
   });
@@ -199,18 +197,14 @@ async function verifyOTOKEN(wallet) {
   console.log("OTOKEN Verified");
 }
 
-async function verifyVTOKEN() {
-  console.log("Starting VTOKEN Verification");
+async function verifyTOKENRewarder() {
+  console.log("Starting TOKENRewarder Verification");
   await hre.run("verify:verify", {
-    address: VTOKEN.address,
-    contract: "contracts/VTOKENFactory.sol:VTOKEN",
-    constructorArguments: [
-      TOKEN.address,
-      OTOKEN.address,
-      rewarderFactory.address,
-    ],
+    address: TOKENRewarder.address,
+    contract: "contracts/TOKENRewarderFactory.sol:TOKENRewarder",
+    constructorArguments: [TOKEN.address, OTOKEN.address],
   });
-  console.log("VTOKEN Verified");
+  console.log("TOKENRewarder Verified");
 }
 
 async function verifyTOKENFees() {
@@ -222,68 +216,26 @@ async function verifyTOKENFees() {
     constructorArguments: [
       rewarder.address,
       TOKEN.address,
-      BASE_ADDRESS,
+      BASE.address,
       OTOKEN.address,
     ],
   });
   console.log("TOKENFees Verified");
 }
 
-async function verifyRewarder() {
-  console.log("Rewarder Deployed at:", rewarder.address);
-  console.log("Starting Rewarder Verification");
-  await hre.run("verify:verify", {
-    address: rewarder.address,
-    contract: "contracts/VTOKENRewarderFactory.sol:VTOKENRewarder",
-    constructorArguments: [VTOKEN.address],
-  });
-  console.log("Rewarder Verified");
-}
-
-async function verifyGovernor() {
-  console.log("Starting Governor Verification");
-  await hre.run("verify:verify", {
-    address: governor.address,
-    contract: "contracts/TOKENGovernor.sol:TOKENGovernor",
-    constructorArguments: [VTOKEN.address],
-  });
-  console.log("Governor Verified");
-}
-
-async function deployGaugeFactory(wallet) {
-  console.log("Starting GaugeFactory Deployment");
-  const gaugeFactoryArtifact = await ethers.getContractFactory("GaugeFactory");
-  const gaugeFactoryContract = await gaugeFactoryArtifact.deploy(wallet, {
-    gasPrice: ethers.gasPrice,
-  });
-  gaugeFactory = await gaugeFactoryContract.deployed();
-  await sleep(5000);
-  console.log("GaugeFactory Deployed at:", gaugeFactory.address);
-}
-
-async function deployBribeFactory(wallet) {
-  console.log("Starting BribeFactory Deployment");
-  const bribeFactoryArtifact = await ethers.getContractFactory("BribeFactory");
-  const bribeFactoryContract = await bribeFactoryArtifact.deploy(wallet, {
-    gasPrice: ethers.gasPrice,
-  });
-  bribeFactory = await bribeFactoryContract.deployed();
-  await sleep(5000);
-  console.log("BribeFactory Deployed at:", bribeFactory.address);
-}
-
-async function deployVoter() {
-  console.log("Starting Voter Deployment");
-  const voterArtifact = await ethers.getContractFactory("Voter");
-  const voterContract = await voterArtifact.deploy(
-    VTOKEN.address,
-    gaugeFactory.address,
-    bribeFactory.address,
+async function deployGridNFT() {
+  console.log("Starting GridNFT Deployment");
+  const minterArtifact = await ethers.getContractFactory("Minter");
+  const minterContract = await minterArtifact.deploy(
+    voter.address,
+    TOKEN.address,
+    TOKENRewarder.address,
+    OTOKEN.address,
     { gasPrice: ethers.gasPrice }
   );
-  voter = await voterContract.deployed();
+  minter = await minterContract.deployed();
   await sleep(5000);
-  console.log("Voter Deployed at:", voter.address);
+  console.log("Minter Deployed at:", minter.address);
 }
 
 async function deployMinter() {
@@ -292,7 +244,7 @@ async function deployMinter() {
   const minterContract = await minterArtifact.deploy(
     voter.address,
     TOKEN.address,
-    VTOKEN.address,
+    TOKENRewarder.address,
     OTOKEN.address,
     { gasPrice: ethers.gasPrice }
   );
