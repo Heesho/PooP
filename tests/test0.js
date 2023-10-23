@@ -25,8 +25,8 @@ function getRndInteger(min, max) {
 
 let owner, multisig, treasury, user0, user1, user2, user3;
 let TOKENRewarderFactory, OTOKENFactory, feesFactory, gridRewarderFactory;
-let TOKEN, TOKENRewarder, OTOKEN, BASE, gridRewarder, minter, fees, multicall;
-let gridNFT;
+let TOKEN, TOKENRewarder, OTOKEN, BASE, minter, fees, multicall;
+let gridNFT, gridRewarder;
 
 describe("test0", function () {
   before("Initial set up", async function () {

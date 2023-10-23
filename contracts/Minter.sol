@@ -38,7 +38,7 @@ contract Minter {
     uint internal constant WEEK = 86400 * 7;            // allows minting once per week (reset every Thursday 00:00 UTC)
     uint internal constant EMISSION = 990;              // 99% of minted tokens go to the pool
     uint internal constant PRECISION = 1000;            // precision for math
-    uint public constant TAIL_RATE = 100 * 1e18;    // Min of 100 OTOKEN per week tail emission
+    uint public constant TAIL_RATE = 10000 * 1e18;    // Min of 100 OTOKEN per week tail emission
 
     /*----------  STATE VARIABLES  --------------------------------------*/
 
@@ -46,7 +46,7 @@ contract Minter {
     ITOKEN public immutable TOKEN;    // TOKEN
     IGridRewarder public immutable gridRewarder;     // Grid Rewarder
 
-    uint public weekly = 1000 * 1e18;    // represents a starting weekly emission of 1000 OTOKEN (OTOKEN has 18 decimals)
+    uint public weekly = 1000000 * 1e18;    // represents a starting weekly emission of 1000 OTOKEN (OTOKEN has 18 decimals)
     uint public active_period;           // the current period (week) that is active
 
     address internal initializer;   // the address that can initialize the contract (owner)
