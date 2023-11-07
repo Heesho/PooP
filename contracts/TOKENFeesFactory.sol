@@ -19,6 +19,10 @@ interface ITOKENRewarder {
 contract TOKENFees {
     using SafeERC20 for IERC20;
 
+    /*----------  CONSTANTS  --------------------------------------------*/
+
+    uint256 public constant DURATION = 7 days; // rewards are released over 7 days
+
     /*----------  STATE VARIABLES  --------------------------------------*/
 
     address public immutable rewarder;    // rewarder address to distribute fees to TOKEN stakers
@@ -62,11 +66,12 @@ contract TOKENFees {
      */
     function distributeBASE() public {
         uint256 balanceBASE = BASE.balanceOf(address(this));
-        emit TOKENFees__DistributedBASE(balanceBASE);
-
-        BASE.safeApprove(rewarder, 0);
-        BASE.safeApprove(rewarder, balanceBASE);
-        ITOKENRewarder(rewarder).notifyRewardAmount(address(BASE), balanceBASE);
+        if (balanceBASE >= DURATION) {
+            emit TOKENFees__DistributedBASE(balanceBASE);
+            BASE.safeApprove(rewarder, 0);
+            BASE.safeApprove(rewarder, balanceBASE);
+            ITOKENRewarder(rewarder).notifyRewardAmount(address(BASE), balanceBASE);
+        }
     }
 
     /**
@@ -74,11 +79,12 @@ contract TOKENFees {
      */
     function distributeTOKEN() public {
         uint256 balanceTOKEN = TOKEN.balanceOf(address(this));
-        emit TOKENFees__DistributedTOKEN(balanceTOKEN);
-
-        TOKEN.safeApprove(rewarder, 0);
-        TOKEN.safeApprove(rewarder, balanceTOKEN);
-        ITOKENRewarder(rewarder).notifyRewardAmount(address(TOKEN), balanceTOKEN);
+        if (balanceTOKEN >= DURATION) {
+            emit TOKENFees__DistributedTOKEN(balanceTOKEN);
+            TOKEN.safeApprove(rewarder, 0);
+            TOKEN.safeApprove(rewarder, balanceTOKEN);
+            ITOKENRewarder(rewarder).notifyRewardAmount(address(TOKEN), balanceTOKEN);
+        }
     }
 
     /**
@@ -86,11 +92,12 @@ contract TOKENFees {
      */
     function distributeOTOKEN() public {
         uint256 balanceOTOKEN = OTOKEN.balanceOf(address(this));
-        emit TOKENFees__DistributedOTOKEN(balanceOTOKEN);
-
-        OTOKEN.safeApprove(rewarder, 0);
-        OTOKEN.safeApprove(rewarder, balanceOTOKEN);
-        ITOKENRewarder(rewarder).notifyRewardAmount(address(OTOKEN), balanceOTOKEN);
+        if (balanceOTOKEN >= DURATION) {
+            emit TOKENFees__DistributedOTOKEN(balanceOTOKEN);
+            OTOKEN.safeApprove(rewarder, 0);
+            OTOKEN.safeApprove(rewarder, balanceOTOKEN);
+            ITOKENRewarder(rewarder).notifyRewardAmount(address(OTOKEN), balanceOTOKEN);
+        }
     }
 
 }

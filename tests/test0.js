@@ -18,6 +18,7 @@ const twoHundred = convert("200", 18);
 const fiveHundred = convert("500", 18);
 const eightHundred = convert("800", 18);
 const oneThousand = convert("1000", 18);
+const oneHundredThousand = convert("100000", 18);
 
 function getRndInteger(min, max) {
   return Math.floor(Math.random() * (max - min)) + min;
@@ -39,9 +40,10 @@ describe("test0", function () {
     // initialize ERC20Mocks
     const ERC20MockArtifact = await ethers.getContractFactory("ERC20Mock");
     BASE = await ERC20MockArtifact.deploy("BASE", "BASE");
-    await BASE.mint(user1.address, oneHundred);
-    await BASE.mint(user2.address, oneHundred);
-    await BASE.mint(user3.address, oneHundred);
+    await BASE.mint(user0.address, 100);
+    await BASE.mint(user1.address, 100);
+    await BASE.mint(user2.address, 100);
+    await BASE.mint(user3.address, 100);
     console.log("- ERC20Mocks Initialized");
 
     // initialize OTOKENFactory
@@ -484,5 +486,212 @@ describe("test0", function () {
     console.log();
     console.log(res[11]);
     console.log();
+  });
+
+  it("Forward 7 days", async function () {
+    console.log("******************************************************");
+    await network.provider.send("evm_increaseTime", [7 * 24 * 3600]);
+    await network.provider.send("evm_mine");
+  });
+
+  it("Distribution", async function () {
+    console.log("******************************************************");
+    await minter.update_period();
+    await fees.distribute();
+  });
+
+  it("Forward 1 days", async function () {
+    console.log("******************************************************");
+    await network.provider.send("evm_increaseTime", [24 * 3600]);
+    await network.provider.send("evm_mine");
+  });
+
+  it("BondingCurveData, user1", async function () {
+    console.log("******************************************************");
+    let res = await multicall.bondingCurveData(user1.address);
+    console.log("GLOBAL DATA");
+    console.log("Price BASE: $", divDec(res.priceBASE));
+    console.log("Price TOKEN: $", divDec(res.priceTOKEN));
+    console.log("Price OTOKEN: $", divDec(res.priceOTOKEN));
+    console.log("Total Value Locked: $", divDec(res.tvl));
+    console.log("MarketCap: ", divDec(res.marketCap));
+    console.log("TOKEN Supply: ", divDec(res.supplyTOKEN));
+    console.log("Staked Supply: ", divDec(res.supplyStaked));
+    console.log("APR: ", divDec(res.apr), "%");
+    console.log("Loan-to-Value: ", divDec(res.ltv), "%");
+    console.log();
+    console.log("ACCOUNT DATA");
+    console.log("Balance BASE: ", divDec(res.accountBASE));
+    console.log("Earned BASE: ", divDec(res.accountEarnedBASE));
+    console.log("Balance TOKEN: ", divDec(res.accountTOKEN));
+    console.log("Earned TOKEN: ", divDec(res.accountEarnedTOKEN));
+    console.log("Balance OTOKEN: ", divDec(res.accountOTOKEN));
+    console.log("Earned OTOKEN: ", divDec(res.accountEarnedOTOKEN));
+    console.log("Balance Staked: ", divDec(res.accountStaked));
+    console.log("Power: ", divDec(res.accountPower));
+    console.log("Borrow Credit: ", divDec(res.accountBorrowCredit), "BASE");
+    console.log("Borrow Debt: ", divDec(res.accountBorrowDebt), "BASE");
+    console.log("Max Withdraw: ", divDec(res.accountMaxWithdraw), "TOKEN");
+    console.log();
+  });
+
+  it("Quote Buy In", async function () {
+    console.log("******************************************************");
+    let res = await multicall.connect(owner).quoteBuyIn(ten, 9800);
+    console.log("BASE in", divDec(ten));
+    console.log("Slippage Tolerance", "2%");
+    console.log();
+    console.log("TOKEN out", divDec(res.output));
+    console.log("slippage", divDec(res.slippage));
+    console.log("min TOKEN out", divDec(res.minOutput));
+  });
+
+  it("User0 Buys TOKEN with 10 BASE", async function () {
+    console.log("******************************************************");
+    await BASE.connect(user0).approve(TOKEN.address, ten);
+    await TOKEN.connect(user0).buy(
+      ten,
+      1,
+      1792282187,
+      user0.address,
+      AddressZero
+    );
+  });
+
+  it("Quote Sell In", async function () {
+    console.log("******************************************************");
+    let res = await multicall.quoteSellIn(
+      await TOKEN.balanceOf(user0.address),
+      9700
+    );
+    console.log("TOKEN in", divDec(await TOKEN.balanceOf(user0.address)));
+    console.log("Slippage Tolerance", "3%");
+    console.log();
+    console.log("BASE out", divDec(res.output));
+    console.log("slippage", divDec(res.slippage));
+    console.log("min BASE out", divDec(res.minOutput));
+  });
+
+  it("User0 Sells all TOKEN", async function () {
+    console.log("******************************************************");
+    await TOKEN.connect(user0).approve(TOKEN.address, await TOKEN.getMaxSell());
+    await TOKEN.connect(user0).sell(
+      await TOKEN.getMaxSell(),
+      1,
+      1892282187,
+      user0.address,
+      AddressZero
+    );
+  });
+
+  it("User0 Buys 10 TOKEN", async function () {
+    console.log("******************************************************");
+    let res = await multicall
+      .connect(owner)
+      .quoteBuyOut(oneHundredThousand, 9700);
+    console.log("TOKEN out", divDec(oneHundredThousand));
+    console.log("Slippage Tolerance", "3%");
+    console.log();
+    console.log("BASE in", divDec(res.output));
+    console.log("slippage", divDec(res.slippage));
+    console.log("min TOKEN out", divDec(res.minOutput));
+
+    await BASE.connect(user0).approve(TOKEN.address, res.output);
+    await TOKEN.connect(user0).buy(
+      res.output,
+      res.minOutput,
+      1792282187,
+      user0.address,
+      AddressZero
+    );
+  });
+
+  it("User0 sell TOKEN for 5 BASE", async function () {
+    console.log("******************************************************");
+    let res = await multicall.connect(owner).quoteSellOut(one, 9950);
+    console.log("BASE out", divDec(one));
+    console.log("Slippage Tolerance", "0.5%");
+    console.log();
+    console.log("TOKEN in", divDec(res.output));
+    console.log("slippage", divDec(res.slippage));
+    console.log("min BASE out", divDec(res.minOutput));
+
+    await TOKEN.connect(user0).approve(TOKEN.address, res.output);
+    await TOKEN.connect(user0).sell(
+      res.output,
+      res.minOutput,
+      1892282187,
+      user0.address,
+      AddressZero
+    );
+  });
+
+  it("User0 stakes TOKEN", async function () {
+    console.log("******************************************************");
+    await TOKEN.connect(user0).approve(TOKENRewarder.address, oneHundred);
+    await TOKENRewarder.connect(user0).deposit(oneHundred);
+  });
+
+  it("BondingCurveData, user1", async function () {
+    console.log("******************************************************");
+    let res = await multicall.bondingCurveData(user1.address);
+    console.log("GLOBAL DATA");
+    console.log("Price BASE: $", divDec(res.priceBASE));
+    console.log("Price TOKEN: $", divDec(res.priceTOKEN));
+    console.log("Price OTOKEN: $", divDec(res.priceOTOKEN));
+    console.log("Total Value Locked: $", divDec(res.tvl));
+    console.log("MarketCap: ", divDec(res.marketCap));
+    console.log("TOKEN Supply: ", divDec(res.supplyTOKEN));
+    console.log("Staked Supply: ", divDec(res.supplyStaked));
+    console.log("APR: ", divDec(res.apr), "%");
+    console.log("Loan-to-Value: ", divDec(res.ltv), "%");
+    console.log();
+    console.log("ACCOUNT DATA");
+    console.log("Balance BASE: ", divDec(res.accountBASE));
+    console.log("Earned BASE: ", divDec(res.accountEarnedBASE));
+    console.log("Balance TOKEN: ", divDec(res.accountTOKEN));
+    console.log("Earned TOKEN: ", divDec(res.accountEarnedTOKEN));
+    console.log("Balance OTOKEN: ", divDec(res.accountOTOKEN));
+    console.log("Earned OTOKEN: ", divDec(res.accountEarnedOTOKEN));
+    console.log("Balance Staked: ", divDec(res.accountStaked));
+    console.log("Power: ", divDec(res.accountPower));
+    console.log("Borrow Credit: ", divDec(res.accountBorrowCredit), "BASE");
+    console.log("Borrow Debt: ", divDec(res.accountBorrowDebt), "BASE");
+    console.log("Max Withdraw: ", divDec(res.accountMaxWithdraw), "TOKEN");
+    console.log();
+  });
+
+  it("User1 Sells all TOKEN", async function () {
+    console.log("******************************************************");
+    await TOKEN.connect(user0).approve(
+      TOKEN.address,
+      await TOKEN.balanceOf(user0.address)
+    );
+    await TOKEN.connect(user0).sell(
+      await TOKEN.balanceOf(user0.address),
+      1,
+      1892282187,
+      user0.address,
+      AddressZero
+    );
+  });
+
+  it("User0 borrows max against staked position", async function () {
+    console.log("******************************************************");
+    await TOKEN.connect(user0).borrow(
+      await TOKEN.getAccountCredit(user0.address)
+    );
+  });
+
+  it("User0 tries to withdraws staked position", async function () {
+    console.log("******************************************************");
+    await expect(
+      TOKENRewarder.connect(user0).withdraw(
+        await TOKENRewarder.connect(owner).balanceOf(user0.address)
+      )
+    ).to.be.revertedWith("TOKENRewarder__CollateralActive");
+    await expect(TOKENRewarder.connect(user0).withdraw(0)).to.be.revertedWith(
+      "TOKENRewarder__InvalidZeroInput"
+    );
   });
 });

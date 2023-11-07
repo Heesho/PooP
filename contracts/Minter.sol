@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
 interface ITOKEN {
-    function FEES() external view returns (address);
+    function fees() external view returns (address);
 }
 
 interface IOTOKEN {
@@ -105,7 +105,7 @@ contract Minter {
                 require(IOTOKEN(address(OTOKEN)).mint(address(this), _required - _balanceOf));
             }
 
-            OTOKEN.safeTransfer(TOKEN.FEES(), _growth);
+            OTOKEN.safeTransfer(TOKEN.fees(), _growth);
 
             OTOKEN.approve(address(gridRewarder), weekly);
             gridRewarder.notifyRewardAmount(address(OTOKEN), weekly);

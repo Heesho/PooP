@@ -27,24 +27,24 @@ async function getContracts() {
   );
   OTOKENFactory = await ethers.getContractAt(
     "contracts/OTOKENFactory.sol:OTOKENFactory",
-    "0x2E2d8D7c9Bf746ccE7F0F2B26bebe42dd25E9486"
+    "0x343356439ff945776e936b4e6fc91F8ABB86b6cE"
   );
   feesFactory = await ethers.getContractAt(
     "contracts/TOKENFeesFactory.sol:TOKENFeesFactory",
-    "0x6D73eAED34759D676f446dAF5d395B130c68eeAF"
+    "0x6FFD26B9cc30dA83217b30AE4b93565293233aB8"
   );
   TOKENRewarderFactory = await ethers.getContractAt(
     "contracts/TOKENRewarderFactory.sol:TOKENRewarderFactory",
-    "0x0D8109885CC10EEE4ee3cefCfDfB25C4b84d3c59"
+    "0x9a5cf923958d1d9fB4040Ab4b143c7b502D1217A"
   );
   gridRewarderFactory = await ethers.getContractAt(
     "contracts/GridRewarderFactory.sol:GridRewarderFactory",
-    "0xeC98283277704D69D8cE653d284df97Fcc2f420d"
+    "0xc07Fa3fCf9813c43aa5E4720cbD4d7839695fDf2"
   );
 
   TOKEN = await ethers.getContractAt(
     "contracts/TOKEN.sol:TOKEN",
-    "0x3b53Da4DE9B159e3EB70aC6763023f529ea89CA1"
+    "0x488aA4F1f43FD854823e8Ce38A34Fd2d877f5913"
   );
   OTOKEN = await ethers.getContractAt(
     "contracts/OTOKENFactory.sol:OTOKEN",
@@ -61,20 +61,20 @@ async function getContracts() {
 
   gridNFT = await ethers.getContractAt(
     "contracts/GridNFT.sol:GridNFT",
-    "0xde84d1E00cA5c27F598dea68320F25167fde308F"
+    "0x61b4b61C90885BCD4c3325C835e8CB3A35902F76"
   );
   gridRewarder = await ethers.getContractAt(
     "contracts/GridRewarderFactory.sol:GridRewarder",
-    "0xA0377Fe6d61f8D568344dBD3bEBb5D3721931Ab6"
+    "0xb4727FbFdf52F90A305A192c84c5ea586C48bc61"
   );
   minter = await ethers.getContractAt(
     "contracts/Minter.sol:Minter",
-    "0x5bB6134c6a4559dDBa0c60b1AcE7c2597E91E7e2"
+    "0xc2b30aaBbd0a5eb37C2F1Fd13AE42D44921472aa"
   );
 
   multicall = await ethers.getContractAt(
     "contracts/Multicall.sol:Multicall",
-    "0xA63d0130b65a68aAFf0F4A07Dbd5d7d927EC6C8a"
+    "0xC252DddA61d59c24CE6E061b00814494165b1C40"
   );
 
   console.log("Contracts Retrieved");
@@ -375,6 +375,35 @@ async function setUpSystem(wallet) {
   await gridNFT.safeMint(wallet); // 2
   await sleep(5000);
   await gridNFT.safeMint(wallet); // 3
+  await sleep(5000);
+  await gridNFT.safeMint(wallet); // 4
+  await sleep(5000);
+  await gridNFT.safeMint(wallet); // 5
+  await sleep(5000);
+  await gridNFT.safeMint(wallet); // 6
+  await sleep(5000);
+  await gridNFT.safeMint(wallet); // 7
+  await sleep(5000);
+  await gridNFT.safeMint(wallet); // 8
+  await sleep(5000);
+  await gridNFT.safeMint(wallet); // 9
+  await sleep(5000);
+  await gridNFT.safeMint(wallet); // 10
+  await sleep(5000);
+  await gridNFT.safeMint(wallet); // 11
+  console.log("NFTs minted");
+
+  await gridNFT.setColors([
+    "#FF0000",
+    "#0135FF",
+    "#03FF00",
+    "#FFDE02",
+    "#FF5C02",
+    "#03FFF7",
+    "#AD00FF",
+    "#FF00C7",
+  ]);
+  console.log("Colors set");
 
   console.log("System Initialized");
 }
@@ -424,9 +453,9 @@ async function main() {
   // 4. Deploy Ancillary Contracts
   //===================================================================
 
-  console.log("Starting Ancillary Deployment");
-  await deployMulticall();
-  await printAncillaryAddresses();
+  // console.log("Starting Ancillary Deployment");
+  // await deployMulticall();
+  // await printAncillaryAddresses();
 
   /*********** UPDATE getContracts() with new addresses *************/
 
@@ -463,9 +492,9 @@ async function main() {
   // 8. Set Up System
   //===================================================================
 
-  console.log("Starting System Set Up");
-  await setUpSystem(wallet.address);
-  console.log("System Set Up");
+  // console.log("Starting System Set Up");
+  // await setUpSystem(wallet.address);
+  // console.log("System Set Up");
 }
 
 main()
